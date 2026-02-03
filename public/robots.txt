@@ -1,0 +1,12 @@
+# robots.txt for Social0n
+# https://social0n.com
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://social0n.com/sitemap.xml
+
+# Disallow admin/dashboard for search engines
+Disallow: /dashboard
+Disallow: /api
