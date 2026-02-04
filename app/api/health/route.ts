@@ -54,7 +54,10 @@ export async function GET() {
   details.ai = checks.ai ? 'Configured' : 'Not configured';
 
   // GHL check
-  checks.ghl = !!(process.env.GHL_LOCATION_PIT || process.env.GHL_CLIENT_ID);
+  checks.ghl = !!(
+    (process.env.GHL_LOCATION_PIT && process.env.GHL_LOCATION_ID) ||
+    (process.env.GHL_CLIENT_ID && process.env.GHL_CLIENT_SECRET)
+  );
   details.ghl = checks.ghl ? 'Configured' : 'Not configured';
 
   const allHealthy = Object.values(checks).every(Boolean);

@@ -167,34 +167,35 @@ export default function MethodologyPage() {
   return (
     <div className="min-h-screen bg-dark-900">
       {/* Navigation */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-4xl">
-        <div className="glass-header rounded-full px-8 py-4">
+      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-7xl">
+        <div className="glass-header rounded-2xl md:rounded-full px-4 md:px-8 py-3 md:py-4">
           <div className="flex items-center justify-between">
             <Link href="/">
               <Logo size="md" />
             </Link>
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/science" className="text-zinc-400 hover:text-white transition-colors">
+            <div className="hidden lg:flex items-center gap-6 xl:gap-8">
+              <Link href="/science" className="text-zinc-400 hover:text-white transition-colors text-sm">
                 The Science
               </Link>
-              <Link href="/#campaigns" className="text-zinc-400 hover:text-white transition-colors">
+              <Link href="/#campaigns" className="text-zinc-400 hover:text-white transition-colors text-sm">
                 Campaigns
               </Link>
-              <Link href="/pricing" className="text-zinc-400 hover:text-white transition-colors">
+              <Link href="/pricing" className="text-zinc-400 hover:text-white transition-colors text-sm">
                 Pricing
               </Link>
             </div>
-            <div className="flex items-center gap-4">
-              <Link href="/login" className="text-zinc-400 hover:text-white transition-colors">
+            <div className="flex items-center gap-2 md:gap-4">
+              <Link href="/login" className="text-zinc-400 hover:text-white transition-colors text-sm hidden sm:block">
                 Sign In
               </Link>
               <Link href="/signup">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="px-5 py-2.5 btn-gradient text-white rounded-xl font-medium"
+                  className="px-3 md:px-5 py-2 md:py-2.5 btn-gradient text-white rounded-xl font-medium text-sm"
                 >
-                  Start Campaign
+                  <span className="hidden sm:inline">Start Campaign</span>
+                  <span className="sm:hidden">Start</span>
                 </motion.button>
               </Link>
             </div>
@@ -203,7 +204,7 @@ export default function MethodologyPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-40 pb-20 px-6">
+      <section className="pt-28 md:pt-40 pb-16 md:pb-20 px-4 md:px-6">
         <div className="max-w-5xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

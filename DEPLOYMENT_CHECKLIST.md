@@ -40,6 +40,10 @@ GHL_CLIENT_ID=xxxxx
 GHL_CLIENT_SECRET=xxxxx
 GHL_AGENCY_PIT=pit-xxxxx
 GHL_LOCATION_PIT=pit-xxxxx
+GHL_LOCATION_ID=xxxxx
+
+# VIP Access (comma-separated emails)
+VIP_EMAILS=mike@rocketopp.com
 
 # ============================================
 # OPTIONAL: ANALYTICS

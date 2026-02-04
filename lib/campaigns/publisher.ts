@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../supabase';
 import { createGHLClient } from '../ghl/client';
 import { Platform } from './types';
+import { getCampaignStats } from './engine';
 
 interface PublishResult {
   success: boolean;
@@ -188,4 +189,48 @@ export async function syncPostEngagement(postId: string): Promise<void> {
   } catch (error) {
     console.error(`Failed to sync engagement for post ${postId}:`, error);
   }
+}
+
+async function syncCampaignEngagement(campaignId: string) {
+  const stats = await getCampaignStats(campaignId);
+  if (!stats) return;
+
+  await supabaseAdmin
+    .from('social0n_campaigns')
+    .update({
+      posts_published: stats.posts_published,
+      engagement_rate: stats.engagement_rate,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', campaignId);
+}
+
+export async function syncRecentEngagement(daysBack = 30) {
+  const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: posts } = await supabaseAdmin
+    .from('social0n_posts')
+    .select('id, campaign_id')
+    .not('ghl_post_id', 'is', null)
+    .eq('status', 'published')
+    .gte('published_at', since)
+    .limit(200);
+
+  if (!posts || posts.length === 0) {
+    return { synced: 0, campaigns: 0 };
+  }
+
+  const campaignIds = new Set<string>();
+
+  for (const post of posts) {
+    await syncPostEngagement(post.id);
+    campaignIds.add(post.campaign_id);
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  for (const campaignId of campaignIds) {
+    await syncCampaignEngagement(campaignId);
+  }
+
+  return { synced: posts.length, campaigns: campaignIds.size };
 }

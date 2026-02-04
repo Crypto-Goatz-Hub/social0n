@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { startCampaign } from '@/lib/campaigns/engine';
+import { isVipUser } from '@/lib/access';
 
 export async function POST(
   request: NextRequest,
@@ -35,7 +36,8 @@ export async function POST(
     }
 
     // Check if campaign is paid for
-    const { data: payment } = await supabaseAdmin
+    const isVip = isVipUser(session.user);
+    const { data: payment } = isVip ? { data: { id: 'vip' } } : await supabaseAdmin
       .from('social0n_payments')
       .select('id')
       .eq('campaign_id', campaignId)

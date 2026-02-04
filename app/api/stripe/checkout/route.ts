@@ -2,14 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { CAMPAIGN_TYPES, CampaignType } from '@/lib/campaigns/types';
+import { isVipUser } from '@/lib/access';
 
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { success: false, error: 'Stripe is not configured' },
+        { status: 500 }
+      );
+    }
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      return NextResponse.json(
+        { success: false, error: 'App URL is not configured' },
+        { status: 500 }
+      );
+    }
+
     // Dynamic import to avoid build-time issues
     const Stripe = (await import('stripe')).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-      apiVersion: '2025-02-24.acacia',
-    });
+    // Use Stripe's default API version to avoid invalid/unsupported version errors
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     const session = await getSession();
     if (!session) {
@@ -48,7 +61,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already paid
+    // Check if already paid (or VIP)
+    const isVip = isVipUser(session.user);
     const { data: existingPayment } = await supabaseAdmin
       .from('social0n_payments')
       .select('id')
@@ -56,10 +70,23 @@ export async function POST(request: NextRequest) {
       .eq('status', 'succeeded')
       .single();
 
-    if (existingPayment) {
+    if (existingPayment || isVip) {
+      if (isVip && !existingPayment) {
+        await supabaseAdmin.from('social0n_payments').insert({
+          user_id: session.user.id,
+          campaign_id: campaignId,
+          amount: 0,
+          currency: 'usd',
+          status: 'succeeded',
+          metadata: { vip: true },
+          created_at: new Date().toISOString(),
+        });
+      }
       return NextResponse.json(
-        { success: false, error: 'Campaign already paid for' },
-        { status: 400 }
+        {
+          success: true,
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/campaigns/${campaignId}?payment=vip`,
+        }
       );
     }
 
@@ -95,7 +122,12 @@ export async function POST(request: NextRequest) {
       url: checkoutSession.url,
     });
   } catch (error) {
-    console.error('Checkout error:', error);
+    const err = error as { message?: string; type?: string; code?: string };
+    console.error('Checkout error:', {
+      message: err?.message,
+      type: err?.type,
+      code: err?.code,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to create checkout session' },
       { status: 500 }

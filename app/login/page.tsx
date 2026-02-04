@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, Chrome, Linkedin } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
@@ -69,6 +69,30 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-5">
+            <div className="grid gap-3">
+              <button
+                type="button"
+                onClick={() => { window.location.href = '/api/auth/oauth/google?mode=login'; }}
+                className="w-full py-3 px-4 bg-dark-800 border border-white/10 rounded-xl text-white hover:bg-dark-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Chrome className="w-5 h-5 text-brand-teal" />
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                onClick={() => { window.location.href = '/api/auth/oauth/linkedin?mode=login'; }}
+                className="w-full py-3 px-4 bg-dark-800 border border-white/10 rounded-xl text-white hover:bg-dark-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Linkedin className="w-5 h-5 text-blue-400" />
+                Continue with LinkedIn
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs text-zinc-500">
+              <div className="flex-1 h-px bg-white/5" />
+              or sign in with email
+              <div className="flex-1 h-px bg-white/5" />
+            </div>
             <div>
               <label className="block text-sm text-zinc-400 mb-2">Email</label>
               <div className="relative">

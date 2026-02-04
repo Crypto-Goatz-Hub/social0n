@@ -255,13 +255,6 @@ export default function ConnectionsPage() {
         </p>
         <div className="flex flex-wrap gap-3">
           <a
-            href="#"
-            className="flex items-center gap-2 px-4 py-2 bg-dark-800 text-zinc-300 rounded-xl hover:bg-dark-700 transition-colors"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Setup Guides
-          </a>
-          <a
             href="mailto:support@social0n.com"
             className="flex items-center gap-2 px-4 py-2 bg-dark-800 text-zinc-300 rounded-xl hover:bg-dark-700 transition-colors"
           >
