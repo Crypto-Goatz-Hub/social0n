@@ -21,3 +21,19 @@ export function isVipUser(user: Pick<User, 'email'> | null | undefined): boolean
   const email = normalizeEmail(user.email);
   return getVipEmails().includes(email);
 }
+
+export function hasActiveSubscription(
+  user: Pick<User, 'subscription_status' | 'email'> | null | undefined
+): boolean {
+  if (!user) return false;
+  if (isVipUser(user)) return true;
+  return user.subscription_status === 'active' || user.subscription_status === 'trialing';
+}
+
+export function hasCRMAccess(
+  user: Pick<User, 'crm_location_id' | 'onboarding_completed' | 'subscription_status' | 'email'> | null | undefined
+): boolean {
+  if (!user) return false;
+  if (isVipUser(user)) return true;
+  return !!user.crm_location_id && !!user.onboarding_completed && hasActiveSubscription(user);
+}

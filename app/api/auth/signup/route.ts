@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { hashPassword, createSession, setSessionCookie } from '@/lib/auth';
-import { createGHLClient } from '@/lib/ghl/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user
+    // Create user with onboarding pending
     const passwordHash = await hashPassword(password);
     const { data: user, error } = await supabaseAdmin
       .from('social0n_users')
@@ -44,6 +43,8 @@ export async function POST(request: NextRequest) {
         company: company || null,
         email: email.toLowerCase(),
         password_hash: passwordHash,
+        onboarding_completed: false,
+        subscription_status: 'none',
       })
       .select('id')
       .single();
@@ -59,22 +60,6 @@ export async function POST(request: NextRequest) {
     // Create session
     const sessionToken = await createSession(user.id);
     await setSessionCookie(sessionToken);
-
-    // Optional: Create GHL contact on signup
-    if (process.env.GHL_LOCATION_PIT && process.env.GHL_LOCATION_ID) {
-      try {
-        const ghl = createGHLClient(process.env.GHL_LOCATION_PIT, process.env.GHL_LOCATION_ID);
-        await ghl.createContact({
-          email: email.toLowerCase(),
-          name,
-          tags: ['social0n_signup'],
-          source: 'social0n',
-          customFields: company ? { company } : undefined,
-        });
-      } catch (ghlError) {
-        console.error('GHL contact create error:', ghlError);
-      }
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession, getCRMCredentials } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
-import { createGHLClient } from '@/lib/ghl/client';
+import { createCRMClient } from '@/lib/ghl/client';
 
 function normalizePlatform(raw: string) {
   const value = raw.toLowerCase();
@@ -46,18 +46,17 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unsupported platform' }, { status: 400 });
     }
 
-    const accessToken = process.env.GHL_LOCATION_PIT;
-    const locationId = process.env.GHL_LOCATION_ID;
-
-    if (!accessToken || !locationId) {
+    // Use per-user CRM credentials
+    const crmCreds = await getCRMCredentials(session.user.id);
+    if (!crmCreds) {
       return NextResponse.json(
-        { success: false, error: 'GHL is not configured' },
-        { status: 500 }
+        { success: false, error: 'CRM not connected. Complete onboarding first.' },
+        { status: 403 }
       );
     }
 
-    const ghl = createGHLClient(accessToken, locationId);
-    const accountsResponse = await ghl.getSocialMediaAccounts();
+    const crm = createCRMClient(crmCreds.accessToken, crmCreds.locationId);
+    const accountsResponse = await crm.getSocialMediaAccounts();
     const accounts = accountsResponse?.accounts || [];
 
     const matching = accounts.filter((account: Record<string, any>) => {
@@ -74,7 +73,7 @@ export async function GET(
 
     if (!matching.length) {
       return NextResponse.json(
-        { success: false, error: `No ${platform} accounts found in GHL` },
+        { success: false, error: `No ${platform} accounts found. Connect ${platform} in your CRM first.` },
         { status: 404 }
       );
     }
@@ -84,11 +83,11 @@ export async function GET(
       platform: targetPlatform,
       account_id: String(pickAccountId(account)),
       account_name: pickAccountName(account),
-      access_token: accessToken,
+      access_token: crmCreds.accessToken,
       status: 'active',
       metadata: {
-        location_id: locationId,
-        ghl_account: account,
+        location_id: crmCreds.locationId,
+        crm_account: account,
       },
       updated_at: new Date().toISOString(),
     }));

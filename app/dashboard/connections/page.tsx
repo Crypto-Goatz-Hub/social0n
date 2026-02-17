@@ -102,7 +102,7 @@ export default function ConnectionsPage() {
 
   const handleConnect = async (platform: string) => {
     // In a real implementation, this would redirect to OAuth flow
-    window.open(`/api/connections/${platform}/auth`, '_blank');
+    window.open(`/api/connections/platform/${platform}/auth`, '_blank');
   };
 
   const handleDisconnect = async (connectionId: string) => {

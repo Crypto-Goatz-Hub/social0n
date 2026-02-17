@@ -150,11 +150,19 @@ export async function createCampaign(
 export async function startCampaign(campaignId: string): Promise<boolean> {
   const { data: campaign } = await supabaseAdmin
     .from('social0n_campaigns')
-    .select('*')
+    .select('*, social0n_users!inner(subscription_status, email, onboarding_completed, crm_location_id)')
     .eq('id', campaignId)
     .single();
 
   if (!campaign) return false;
+
+  // Verify user has active subscription and CRM access
+  const owner = campaign.social0n_users;
+  const { hasActiveSubscription, hasCRMAccess } = await import('../access');
+  if (!hasActiveSubscription(owner) || !hasCRMAccess(owner)) {
+    console.error(`Campaign ${campaignId}: user lacks active subscription or CRM access`);
+    return false;
+  }
 
   const campaignType = CAMPAIGN_TYPES[campaign.type as CampaignType];
   const startDate = new Date();

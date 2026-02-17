@@ -29,7 +29,8 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push('/dashboard');
+        // VIP users go straight to dashboard; others check onboarding
+        router.push((data.onboarding_completed || data.is_vip) ? '/dashboard' : '/onboarding');
       } else {
         setError(data.error || 'Invalid credentials');
       }

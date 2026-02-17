@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { isVipUser } from '@/lib/access';
 
 export async function GET() {
   try {
@@ -12,6 +13,7 @@ export async function GET() {
     return NextResponse.json({
       authenticated: true,
       user: session.user,
+      is_vip: isVipUser(session.user),
     });
   } catch (error) {
     console.error('Session error:', error);

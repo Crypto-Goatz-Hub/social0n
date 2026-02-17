@@ -1,12 +1,13 @@
 import { supabaseAdmin } from '../supabase';
-import { createGHLClient } from '../ghl/client';
+import { createCRMClient } from '../ghl/client';
+import { getCRMCredentials } from '../auth';
 import { Platform } from './types';
 import { getCampaignStats } from './engine';
 
 interface PublishResult {
   success: boolean;
   postId: string;
-  ghlPostId?: string;
+  crmPostId?: string;
   error?: string;
 }
 
@@ -20,6 +21,10 @@ async function getConnectionForPlatform(
   userId: string,
   platform: Platform
 ): Promise<ConnectionInfo | null> {
+  // Get user's own CRM credentials (per-user, not shared)
+  const crmCreds = await getCRMCredentials(userId);
+  if (!crmCreds) return null;
+
   const { data: connection } = await supabaseAdmin
     .from('social0n_connections')
     .select('*')
@@ -31,9 +36,9 @@ async function getConnectionForPlatform(
   if (!connection) return null;
 
   return {
-    accessToken: connection.access_token,
+    accessToken: crmCreds.accessToken,
     accountId: connection.account_id,
-    locationId: connection.metadata?.location_id || '',
+    locationId: crmCreds.locationId,
   };
 }
 
@@ -62,26 +67,26 @@ export async function publishPost(postId: string): Promise<PublishResult> {
       return { success: false, postId, error: `No active ${platform} connection` };
     }
 
-    // Create GHL client
-    const ghl = createGHLClient(connection.accessToken, connection.locationId);
+    // Create CRM client with user's own credentials
+    const crm = createCRMClient(connection.accessToken, connection.locationId);
 
     // Publish based on platform
-    let ghlPostId: string | undefined;
+    let crmPostId: string | undefined;
 
     if (platform === 'gmb') {
-      const result = await ghl.createGMBPost({
+      const result = await crm.createGMBPost({
         accountId: connection.accountId,
         content: post.content,
         mediaUrls: post.media_urls || [],
       });
-      ghlPostId = result.post?.id;
+      crmPostId = result.post?.id;
     } else {
-      const result = await ghl.createPost({
+      const result = await crm.createPost({
         accountIds: [connection.accountId],
         content: post.content,
         mediaUrls: post.media_urls || [],
       });
-      ghlPostId = result.post?.id;
+      crmPostId = result.post?.id;
     }
 
     // Update post status
@@ -90,7 +95,7 @@ export async function publishPost(postId: string): Promise<PublishResult> {
       .update({
         status: 'published',
         published_at: new Date().toISOString(),
-        ghl_post_id: ghlPostId,
+        ghl_post_id: crmPostId,
         updated_at: new Date().toISOString(),
       })
       .eq('id', postId);
@@ -100,7 +105,7 @@ export async function publishPost(postId: string): Promise<PublishResult> {
       campaign_id: post.campaign_id,
     });
 
-    return { success: true, postId, ghlPostId };
+    return { success: true, postId, crmPostId };
   } catch (error) {
     console.error(`Failed to publish post ${postId}:`, error);
 
@@ -170,14 +175,14 @@ export async function syncPostEngagement(postId: string): Promise<void> {
   if (!post || !post.ghl_post_id) return;
 
   const platform = post.platform as Platform;
-  const connection = await getConnectionForPlatform(post.campaign.user_id, platform);
+  const crmCreds = await getCRMCredentials(post.campaign.user_id);
 
-  if (!connection) return;
+  if (!crmCreds) return;
 
-  const ghl = createGHLClient(connection.accessToken, connection.locationId);
+  const crm = createCRMClient(crmCreds.accessToken, crmCreds.locationId);
 
   try {
-    const analytics = await ghl.getPostAnalytics(post.ghl_post_id);
+    const analytics = await crm.getPostAnalytics(post.ghl_post_id);
 
     await supabaseAdmin
       .from('social0n_posts')

@@ -51,11 +51,18 @@ export default function DashboardLayout({
       const res = await fetch('/api/auth/session');
       const data = await res.json();
 
-      if (data.authenticated) {
-        setUser(data.user);
-      } else {
+      if (!data.authenticated) {
         router.push('/login');
+        return;
       }
+
+      // Redirect to onboarding if not completed (VIP users bypass)
+      if (!data.user?.onboarding_completed && !data.is_vip) {
+        router.push('/onboarding');
+        return;
+      }
+
+      setUser(data.user);
     } catch {
       router.push('/login');
     } finally {

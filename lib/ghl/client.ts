@@ -1,16 +1,16 @@
-const GHL_API_BASE = 'https://services.leadconnectorhq.com';
-const GHL_API_VERSION = '2021-07-28';
+const CRM_API_BASE = 'https://services.leadconnectorhq.com';
+const CRM_API_VERSION = '2021-07-28';
 
-interface GHLConfig {
+interface CRMConfig {
   accessToken: string;
   locationId: string;
 }
 
-export class GHLClient {
+export class CRMClient {
   private accessToken: string;
   private locationId: string;
 
-  constructor(config: GHLConfig) {
+  constructor(config: CRMConfig) {
     this.accessToken = config.accessToken;
     this.locationId = config.locationId;
   }
@@ -19,13 +19,13 @@ export class GHLClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${GHL_API_BASE}${endpoint}`;
+    const url = `${CRM_API_BASE}${endpoint}`;
 
     const response = await fetch(url, {
       ...options,
       headers: {
         'Authorization': `Bearer ${this.accessToken}`,
-        'Version': GHL_API_VERSION,
+        'Version': CRM_API_VERSION,
         'Content-Type': 'application/json',
         ...options.headers,
       },
@@ -33,7 +33,7 @@ export class GHLClient {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`GHL API Error: ${response.status} - ${error}`);
+      throw new Error(`CRM API Error: ${response.status} - ${error}`);
     }
 
     return response.json();
@@ -169,6 +169,11 @@ export class GHLClient {
   }
 }
 
-export function createGHLClient(accessToken: string, locationId: string) {
-  return new GHLClient({ accessToken, locationId });
+// Backwards-compatible exports
+export function createCRMClient(accessToken: string, locationId: string) {
+  return new CRMClient({ accessToken, locationId });
 }
+
+// Legacy alias — will be removed in future
+export const createGHLClient = createCRMClient;
+export const GHLClient = CRMClient;

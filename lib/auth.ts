@@ -12,6 +12,10 @@ export interface User {
   name: string;
   company?: string;
   created_at: string;
+  crm_location_id?: string;
+  crm_company_id?: string;
+  subscription_status: string;
+  onboarding_completed: boolean;
 }
 
 export interface Session {
@@ -66,7 +70,7 @@ export async function getSession(): Promise<{ user: User; session: Session } | n
 
   const { data: user } = await supabaseAdmin
     .from('social0n_users')
-    .select('id, email, name, company, created_at')
+    .select('id, email, name, company, created_at, crm_location_id, crm_company_id, subscription_status, onboarding_completed')
     .eq('id', session.user_id)
     .single();
 
@@ -97,4 +101,22 @@ export async function clearSession() {
   }
 
   cookieStore.delete(SESSION_COOKIE);
+}
+
+// Get CRM credentials for a user (with auto-refresh)
+export async function getCRMCredentials(userId: string): Promise<{
+  accessToken: string;
+  locationId: string;
+} | null> {
+  const { getValidAccessToken } = await import('./crm-oauth');
+  const token = await getValidAccessToken(userId);
+
+  const { data: user } = await supabaseAdmin
+    .from('social0n_users')
+    .select('crm_location_id')
+    .eq('id', userId)
+    .single();
+
+  if (!token || !user?.crm_location_id) return null;
+  return { accessToken: token, locationId: user.crm_location_id };
 }

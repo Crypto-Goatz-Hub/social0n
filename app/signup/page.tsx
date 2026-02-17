@@ -33,7 +33,8 @@ export default function SignupPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push('/dashboard/campaigns/new');
+        // Redirect to onboarding to connect CRM
+        router.push('/onboarding');
       } else {
         setError(data.error || 'Failed to create account');
       }

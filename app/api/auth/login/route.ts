@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { verifyPassword, createSession, setSessionCookie } from '@/lib/auth';
+import { isVipUser } from '@/lib/access';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     // Find user
     const { data: user } = await supabaseAdmin
       .from('social0n_users')
-      .select('id, password_hash')
+      .select('id, email, password_hash, onboarding_completed, subscription_status')
       .eq('email', email.toLowerCase())
       .single();
 
@@ -40,7 +41,14 @@ export async function POST(request: NextRequest) {
     const sessionToken = await createSession(user.id);
     await setSessionCookie(sessionToken);
 
-    return NextResponse.json({ success: true });
+    const vip = isVipUser(user);
+
+    return NextResponse.json({
+      success: true,
+      onboarding_completed: user.onboarding_completed ?? false,
+      subscription_status: user.subscription_status ?? 'none',
+      is_vip: vip,
+    });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
